@@ -97,7 +97,48 @@ module.exports = {
      */
     ping: function (success, error) {
         return execPromise(success, error, 'GeofencePlugin', 'ping', []);
-    }
+    },
+    /**
+     * Getting all monitored geofences from the device
+     *
+     * @name  getMonitored
+     * @param  {Function} success callback
+     * @param  {Function} error callback
+     * @return {Promise} if successful returns geofences array stringify to JSON
+     */
+    getMonitored: function (success, error) {
+        return execPromise(success, error, 'GeofencePlugin', 'getMonitored', []);
+    },
+
+    /**
+     * Check if location service is enabled
+     * @param  {Function} success callback
+     * @param  {Function} error callback
+     * @return {Promise} if successful returns boolean value
+     */
+    locationEnabled: function (success, error) {
+        return execPromise(success, error, 'GeofencePlugin', 'locationEnabled', []);
+    },
+
+    /**
+     * Check if location service is authorized (iOS only)
+     * @param  {Function} success callback
+     * @param  {Function} error callback
+     * @return {Promise} if successful returns boolean value
+     */
+    locationAuthorized: function (success, error) {
+        return execPromise(success, error, 'GeofencePlugin', 'locationAuthorized', []);
+    },
+
+    /**
+     * Open location setting (Android only)
+     * @param  {Function} success callback
+     * @param  {Function} error callback
+     * @return {Promise} if successful returns boolean value
+     */
+    openLocationSetting: function (success, error) {
+        return execPromise(success, error, 'GeofencePlugin', 'openLocationSetting', []);
+    },
 };
 
 function execPromise(success, error, pluginName, method, args) {

@@ -95,6 +95,44 @@ func log(message: String){
             }
         }
     }
+    
+    func getMonitored(command: CDVInvokedUrlCommand) {
+        dispatch_async(dispatch_get_global_queue(priority, 0)) {
+            var monitored = self.geoNotificationManager.locationManager.monitoredRegions.generate()
+            var jsonObject: [AnyObject] = Array(count: self.geoNotificationManager.locationManager.monitoredRegions.count, repeatedValue: [AnyObject]())
+            var index = 0
+            while let member = monitored.next(){
+                let region = member as! CLCircularRegion
+                jsonObject[index] = ["id": region.identifier, "latitude": region.center.latitude, "longitude": region.center.longitude, "radius": region.radius]
+                index++
+            }
+            let monitoredJsonString = JSON.stringify(jsonObject)
+            dispatch_async(dispatch_get_main_queue()) {
+                let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAsString: monitoredJsonString)
+                self.commandDelegate!.sendPluginResult(pluginResult, callbackId: command.callbackId)
+            }
+        }
+    }
+    
+    func locationEnabled(command: CDVInvokedUrlCommand) {
+        dispatch_async(dispatch_get_global_queue(priority, 0)) {
+            let enabled = CLLocationManager.locationServicesEnabled()
+            dispatch_async(dispatch_get_main_queue()) {
+                let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAsBool: enabled)
+                self.commandDelegate!.sendPluginResult(pluginResult, callbackId: command.callbackId)
+            }
+        }
+    }
+    
+    func locationAuthorized(command: CDVInvokedUrlCommand) {
+        dispatch_async(dispatch_get_global_queue(priority, 0)) {
+            let authorized = CLLocationManager.authorizationStatus() == CLAuthorizationStatus.AuthorizedAlways
+            dispatch_async(dispatch_get_main_queue()) {
+                let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAsBool: authorized)
+                self.commandDelegate!.sendPluginResult(pluginResult, callbackId: command.callbackId)
+            }
+        }
+    }
 
     func remove(command: CDVInvokedUrlCommand) {
         dispatch_async(dispatch_get_global_queue(priority, 0)) {
@@ -269,7 +307,7 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
 
     func removeGeoNotification(id: String) {
         store.remove(id)
-        var region = getMonitoredRegion(id)
+        let region = getMonitoredRegion(id)
         if (region != nil) {
             log("Stoping monitoring region \(id)")
             locationManager.stopMonitoringForRegion(region!)
