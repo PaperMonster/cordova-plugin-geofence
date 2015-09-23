@@ -546,23 +546,59 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
     }
     
     func notifyServer(geo: JSON,transitionType: String!,location: CLLocationCoordinate2D!) {
-        log("Creating notification")
-        let notification = UILocalNotification()
-        notification.timeZone = NSTimeZone.defaultTimeZone()
-        let dateTime = NSDate()
-        notification.fireDate = dateTime
-        notification.soundName = UILocalNotificationDefaultSoundName
-        notification.alertBody = transitionType + " " + geo["notification"]["title"].asString!
-        if let json = geo["notification"]["data"] as? JSON {
-            notification.userInfo = ["geofence.notification.data": json.description]
-        }
-        UIApplication.sharedApplication().scheduleLocalNotification(notification)
+        log("Telling the server we've triggered a geofence")
+        let request = NSMutableURLRequest(URL: NSURL(string: "http://api.shobshop.com/geofenceEvent")!)
         
-        if let vibrate = geo["notification"]["vibrate"].asArray {
-            if (!vibrate.isEmpty && vibrate[0].asInt > 0) {
-                AudioServicesPlayAlertSound(SystemSoundID(kSystemSoundID_Vibrate))
+        let session = NSURLSession.sharedSession()
+        request.HTTPMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        
+        var params = ["location": geo["id"].asString!, "transitionType": transitionType, "latitude": location.latitude, "longitude":location.longitude] as Dictionary<String,AnyObject>
+        let defaults = NSUserDefaults.standardUserDefaults()
+        let userId = defaults.stringForKey("userId")
+        let deviceId = defaults.stringForKey("deviceId")
+        
+        if userId != nil {
+            NSLog("user = \(userId)")
+            params["user"] = userId
+        }
+        
+        if deviceId != nil && userId == nil {
+            NSLog("device = \(deviceId)")
+            params["device"] = deviceId
+        }
+        
+        do {
+            request.HTTPBody = try NSJSONSerialization.dataWithJSONObject(params, options: [])
+        } catch {
+            log("error on constructing HTTP body = \(error)")
+            request.HTTPBody = nil
+        }
+        
+        let task = session.dataTaskWithRequest(request) { data, response, error in
+            guard data != nil else {
+                log("no data found: \(error)")
+                return
+            }
+            
+            do {
+                if let json = try NSJSONSerialization.JSONObjectWithData(data!, options: []) as? NSDictionary {
+                    let success = json["success"] as? Int                                  // Okay, the `json` is here, let's get the value for 'success' out of it
+                    log("Success: \(success)")
+                    log("JSON response: \(json)")
+                } else {
+                    let jsonStr = NSString(data: data!, encoding: NSUTF8StringEncoding)    // No error thrown, but not NSDictionary
+                    log("Error could not parse JSON: \(jsonStr)")
+                }
+            } catch let parseError {
+                log("error on parsing json = \(parseError)")    // Log the error thrown by `JSONObjectWithData`
+                let jsonStr = NSString(data: data!, encoding: NSUTF8StringEncoding)
+                log("Error could not parse JSON: '\(jsonStr)'")
             }
         }
+        
+        task.resume()
     }
 }
 
