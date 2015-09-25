@@ -49,7 +49,8 @@ public class ReceiveTransitionsIntentService extends IntentService {
         Location geoNotiLocation = new Location("dummyLocation");
         geoNotiLocation.setLatitude(geoNotification.latitude);
         geoNotiLocation.setLongitude(geoNotification.longitude);
-        return geoNotiLocation.distanceTo(location) <= radius;
+        // Use doubled radius (in order not to make the filter too strict)
+        return geoNotiLocation.distanceTo(location) <= radius * 2;
     }
 
     /**
