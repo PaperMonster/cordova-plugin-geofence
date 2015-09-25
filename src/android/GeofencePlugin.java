@@ -1,10 +1,10 @@
 package com.cowbell.cordova.geofence;
 
-import android.content.Context;
-import android.content.Intent;
-import android.util.Log;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.cordova.CallbackContext;
+import org.apache.cordova.PluginResult;
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CordovaWebView;
@@ -12,13 +12,18 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.List;
+import android.content.Context;
+import android.app.Activity;
+import android.util.Log;
+
+import android.content.Intent;
+import android.provider.Settings;
 
 public class GeofencePlugin extends CordovaPlugin {
     public static final String TAG = "GeofencePlugin";
     private GeoNotificationManager geoNotificationManager;
     private Context context;
+    private Activity activity;
     protected static Boolean isInBackground = true;
     public static CordovaWebView webView = null;
 
@@ -33,6 +38,7 @@ public class GeofencePlugin extends CordovaPlugin {
         super.initialize(cordova, webView);
         GeofencePlugin.webView = webView;
         context = this.cordova.getActivity().getApplicationContext();
+        activity = this.cordova.getActivity();
         Logger.setLogger(new Logger(TAG, context, false));
         geoNotificationManager = new GeoNotificationManager(context);
     }
@@ -65,6 +71,29 @@ public class GeofencePlugin extends CordovaPlugin {
             List<GeoNotification> geoNotifications = geoNotificationManager
                     .getWatched();
             callbackContext.success(Gson.get().toJson(geoNotifications));
+        } else if (action.equals("getMonitored")) {
+        	//Return the same thing as getWatched()
+            List<GeoNotification> geoNotifications = geoNotificationManager
+                    .getWatched();
+            callbackContext.success(Gson.get().toJson(geoNotifications));
+        } else if (action.equals("locationEnabled")) {
+            boolean enabled = geoNotificationManager
+                    .isLocationEnabled(context);
+            callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, enabled));
+        } else if (action.equals("locationAuthorized")) {
+            //Android doesn't need to check this
+            callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, true));
+        } else if (action.equals("openLocationSetting")) {
+            //Android only
+            // context.startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+            activity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                    activity.startActivity(intent);
+                }
+            });
+            callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, true));
         } else if (action.equals("initialize")) {
             callbackContext.success();
         } else if (action.equals("deviceReady")) {

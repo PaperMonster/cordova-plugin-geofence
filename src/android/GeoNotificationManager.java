@@ -10,6 +10,7 @@ import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.LocationRequest;
+import android.location.LocationManager;
 
 import org.apache.cordova.CallbackContext;
 
@@ -67,6 +68,36 @@ public class GeoNotificationManager {
             return false;
         }
     }
+
+    public boolean isLocationEnabled(Context context) {
+       /* int locationMode = 0;
+        String locationProviders;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT){
+            try {
+                locationMode = Settings.Secure.getInt(context.getContentResolver(), Settings.Secure.LOCATION_MODE);
+
+            } catch (SettingNotFoundException e) {
+                e.printStackTrace();
+            }
+
+            return locationMode != Settings.Secure.LOCATION_MODE_OFF;
+
+        }else{
+            locationProviders = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.LOCATION_PROVIDERS_ALLOWED);
+            return !TextUtils.isEmpty(locationProviders);
+        }*/
+        LocationManager locationManager =
+                (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+        if(locationManager!=null){
+            logger.log(Log.DEBUG, "Android Location service is "+locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER));
+            return  locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+        }
+        else{
+            logger.log(Log.DEBUG, "Android Location service is null");
+            return false;
+        } 
+    } 
 
     public void addGeoNotifications(List<GeoNotification> geoNotifications,
             final CallbackContext callback) {
